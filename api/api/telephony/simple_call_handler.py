@@ -68,19 +68,46 @@ class SimpleTelephonyHandler:
         call_connection = self.call_client.get_call_connection(call_connection_id)
         
         greeting = "Hello, I am your AI assistant for council services. Please speak after the tone."
-        play_source = TextSource(
-            text=greeting,
-            source_locale="en-US",
-            voice_kind=VoiceKind.FEMALE
-        )
         
+        # Try different approaches
         try:
+            # Approach 1: Use SSML with specific voice
+            ssml_text = f'<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US"><voice name="en-US-JennyNeural">{greeting}</voice></speak>'
+            play_source = SsmlSource(ssml_text=ssml_text)
+            
             result = call_connection.play_media_to_all(
                 play_source=play_source
             )
-            print(f"Play media result: {result}")
-        except Exception as e:
-            print(f"Error playing greeting: {e}")
+            print(f"Play media result (SSML): {result}")
+            
+        except Exception as e1:
+            print(f"SSML approach failed: {e1}")
+            try:
+                # Approach 2: Simple TextSource with en-GB locale
+                play_source = TextSource(
+                    text=greeting,
+                    source_locale="en-GB",
+                    voice_kind=VoiceKind.FEMALE
+                )
+                
+                result = call_connection.play_media_to_all(
+                    play_source=play_source
+                )
+                print(f"Play media result (TextSource GB): {result}")
+                
+            except Exception as e2:
+                print(f"TextSource GB failed: {e2}")
+                try:
+                    # Approach 3: Basic TextSource without locale
+                    play_source = TextSource(text=greeting)
+                    
+                    result = call_connection.play_media_to_all(
+                        play_source=play_source
+                    )
+                    print(f"Play media result (Basic): {result}")
+                    
+                except Exception as e3:
+                    print(f"All playback approaches failed: {e3}")
 
     async def _continue_listening(self, event_data):
         """Start listening after greeting"""
@@ -116,6 +143,10 @@ class SimpleTelephonyHandler:
             )
             
             try:
+                # Use SSML for AI response as well
+                ssml_text = f'<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US"><voice name="en-US-JennyNeural">{ai_response}</voice></speak>'
+                play_source = SsmlSource(ssml_text=ssml_text)
+                
                 result = call_connection.play_media_to_all(
                     play_source=play_source,
                     operation_context="ai_response"

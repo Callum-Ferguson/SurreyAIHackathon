@@ -11,5 +11,5 @@ docx == 0.2.4
 python-docx == 1.1.2
 docx2txt == 0.8
 langdetect == 1.0.9
-ngrok
+pyngrok
 azure-ai-projects

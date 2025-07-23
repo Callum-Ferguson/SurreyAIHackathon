@@ -10,10 +10,10 @@ from api.enrich.audio_converter import AudioConverter
 from api.enrich.audio_transcriber import AudioTranscriber
 from api.telephony.simple_call_handler import SimpleTelephonyHandler
 import azure.cognitiveservices.speech as speechsdk
+
+
 import json
 import re
-
-
 
 dotenv.load_dotenv()
 
