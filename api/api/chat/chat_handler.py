@@ -25,9 +25,9 @@ class ChatHandler:
             credential=DefaultAzureCredential(),
             endpoint="https://oaiexamplecouncilsgr.services.ai.azure.com/api/projects/councilHackathon")
         
-        self.agent_greeting = self.project.agents.get_agent("asst_T0vwSW8CuO0xgLGhPqWUAmAh")
-        self.bot_classification = self.project.agents.get_agent("asst_IEOG8vXeynrp9XWiyLUcaOY5")
-        self.agent_general = self.project.agents.get_agent("asst_itWJ1ZuhhtF8TdmpNcKE9cKO")
+        self.agent_greeting = self.project.agents.get_agent("asst_8TJJTaYXKZajDDm58wJKiUy4")
+        self.bot_classification = self.project.agents.get_agent("asst_aaXXugBdlI7jZ4p4ewROfiQn")
+        self.agent_general = self.project.agents.get_agent("asst_7UCXhk6cGhUh6rRovLIkqLuD")
         self.thread = self.project.agents.threads.create()
     
     def trigger_api_post_request(self,url, payload):
