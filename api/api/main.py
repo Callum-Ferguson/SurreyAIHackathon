@@ -8,7 +8,7 @@ from api.chat.chat_handler import ChatHandler
 from api.enrich.translation import TranslationHandler
 from api.enrich.audio_converter import AudioConverter
 from api.enrich.audio_transcriber import AudioTranscriber
-from api.telephony.simple_call_handler import SimpleTelephonyHandler
+from api.telephony.legacy.simple_call_handler import incoming_call_handler
 import azure.cognitiveservices.speech as speechsdk
 
 
@@ -41,7 +41,6 @@ speech_config = speechsdk.SpeechConfig(
 
 audio_transcriber = AudioTranscriber(speech_config)
 translation_handler = TranslationHandler()
-telephony_handler = SimpleTelephonyHandler()
 
 @app.post("/api/process")
 async def process(request: ProcessRequest) -> ProcessResponse:
@@ -87,9 +86,9 @@ async def process_audio_file(request: ProcessRequest) -> AudioProcessResponse:
         speech_synthesizer.speak_text_async(response_content).get()
         return AudioProcessResponse(transcribed_audio=original_text, response=response_content)
 
-@app.post("/api/telephony/webhook")
+@app.route("/api/incomingCall",  methods=['POST'])
 async def telephony_webhook(request: Request):
     """Handle incoming telephony events"""
-    result = await telephony_handler.handle_incoming_call(request)
+    result = await incoming_call_handler(request)
     return result
 

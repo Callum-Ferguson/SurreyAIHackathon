@@ -8,6 +8,7 @@ from azure.communication.callautomation import (
     VoiceKind,
     FileSource
 )
+import pyodbc
 import azure.cognitiveservices.speech as speechsdk
 from api.chat.chat_handler import ChatHandler
 
@@ -55,12 +56,55 @@ class SimpleTelephonyHandler:
     async def _answer_call(self, event_data):
         """Answer incoming call"""
         incoming_call_context = event_data["data"]["incomingCallContext"]
-        
+
         self.call_client.answer_call(
             incoming_call_context=incoming_call_context,
             callback_url=os.environ["CALLBACK_URL"],
             cognitive_services_endpoint=f"https://{os.environ['SPEECH_REGION']}.api.cognitive.microsoft.com/"
         )
+
+        from_number = (
+            event_data.get('data', {})
+            .get('from', {})
+            .get('phoneNumber', {})
+            .get('value'))
+
+        """
+        Connects to Azure Synapse SQL using Entra ID (no MFA),
+        queries the WHATSAPP_TELNUMBERS table for a specific phone number,
+        and returns the result.
+        """
+        server = "sqlserverislingtoncouncil.database.windows.net"
+        database = "ssislingtoncouncil"
+        table = "[AUTOMATION].[WHATSAPP_TELNUMBERS]"
+
+        # Construct the SQL query
+        query = f"SELECT Name FROM {table} WHERE AuthPhoneNumber = '{from_number}'"
+
+        # Connection string using Active Directory Integrated authentication
+        username = os.environ["SQL_USERNAME"]
+        password = os.environ["SQL_PASSWORD"]
+
+        connection_string = (
+            f"Driver={{ODBC Driver 18 for SQL Server}};"
+            f"Server={server};"
+            f"Database={database};"
+            f"UID={username};"
+            f"PWD={password};"
+            f"Encrypt=no;"
+            f"TrustServerCertificate=no;"
+        )
+
+
+        # Connect and execute
+        with pyodbc.connect(connection_string) as conn:
+            
+            cursor = conn.cursor()
+            cursor.execute(query)
+            name = cursor.fetchall()
+
+        print(f"Query result: {name}")
+
 
     async def _start_conversation(self, event_data):
         """Start conversation with greeting"""
@@ -68,47 +112,35 @@ class SimpleTelephonyHandler:
         call_connection = self.call_client.get_call_connection(call_connection_id)
         
         greeting = "Hello, I am your AI assistant for council services. Please speak after the tone."
-        
-        # Try different approaches
+
+
         try:
-            # Approach 1: Use SSML with specific voice
-            ssml_text = f'<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US"><voice name="en-US-JennyNeural">{greeting}</voice></speak>'
-            play_source = SsmlSource(ssml_text=ssml_text)
-            
-            result = call_connection.play_media_to_all(
-                play_source=play_source
-            )
-            print(f"Play media result (SSML): {result}")
-            
-        except Exception as e1:
-            print(f"SSML approach failed: {e1}")
-            try:
                 # Approach 2: Simple TextSource with en-GB locale
                 play_source = TextSource(
                     text=greeting,
                     source_locale="en-GB",
                     voice_kind=VoiceKind.FEMALE
                 )
-                
+               
                 result = call_connection.play_media_to_all(
                     play_source=play_source
                 )
                 print(f"Play media result (TextSource GB): {result}")
-                
-            except Exception as e2:
+               
+        except :
                 print(f"TextSource GB failed: {e2}")
                 try:
                     # Approach 3: Basic TextSource without locale
                     play_source = TextSource(text=greeting)
-                    
+                   
                     result = call_connection.play_media_to_all(
                         play_source=play_source
                     )
                     print(f"Play media result (Basic): {result}")
-                    
+                   
                 except Exception as e3:
                     print(f"All playback approaches failed: {e3}")
-
+ 
     async def _continue_listening(self, event_data):
         """Start listening after greeting"""
         call_connection_id = event_data["data"]["callConnectionId"]
@@ -143,10 +175,6 @@ class SimpleTelephonyHandler:
             )
             
             try:
-                # Use SSML for AI response as well
-                ssml_text = f'<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US"><voice name="en-US-JennyNeural">{ai_response}</voice></speak>'
-                play_source = SsmlSource(ssml_text=ssml_text)
-                
                 result = call_connection.play_media_to_all(
                     play_source=play_source,
                     operation_context="ai_response"

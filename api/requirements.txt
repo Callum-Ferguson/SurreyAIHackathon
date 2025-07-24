@@ -13,3 +13,8 @@ docx2txt == 0.8
 langdetect == 1.0.9
 pyngrok
 azure-ai-projects
+dotenv
+Quart>=0.19.6
+azure-eventgrid==4.11.0
+azure-communication-callautomation==1.1.0
+openai>=1.0.0
