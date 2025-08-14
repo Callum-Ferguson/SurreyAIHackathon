@@ -51,7 +51,7 @@ AGENT_PHONE_NUMBER = "+447802432579"
 CALLBACK_URI_HOST = os.environ.get("CALLBACK_URL")
 CALLBACK_EVENTS_URI = CALLBACK_URI_HOST + "/api/callbacks"
 
-HELLO_PROMPT = "Hello, thank you for calling London Borough of Islington! How can I help you today?"
+HELLO_PROMPT = "Hello, thank you for calling! How can I help you today?"
 TIMEOUT_SILENCE_PROMPT = "I am sorry, I did not hear anything. If you need assistance, please let me know how I can help you,"
 GOODBYE_PROMPT = "Thank you for calling! I hope I was able to assist you. Have a great day!"
 CONNECT_AGENT_PROMPT = "I'm sorry, I was not able to assist you with your request. Let me transfer you to an agent who can help you further. Please hold the line, and I willl connect you shortly."
@@ -64,7 +64,6 @@ CONNECT_AGENT_CONTEXT = "ConnectAgent"
 GOODBYE_CONTEXT = "Goodbye"
 
 CHAT_RESPONSE_EXTRACT_PATTERN = r"\s*Content:(.*)\s*Score:(.*\d+)\s*Intent:(.*)\s*Category:(.*)"
-chat_handler = ChatHandler()
 # Initialize call automation client with connection string from environment variables
 try:
     call_automation_client = CallAutomationClient.from_connection_string(ACS_CONNECTION_STRING)
@@ -132,6 +131,8 @@ def get_sentiment_score(sentiment_score):
     return int(match.group()) if match else -1
 
 async def answer_call_async(incoming_call_context,callback_url):
+    global chat_handler
+    chat_handler = ChatHandler()
     return await call_automation_client.answer_call(
         incoming_call_context=incoming_call_context,
         cognitive_services_endpoint=COGNITIVE_SERVICE_ENDPOINT,

@@ -23,11 +23,11 @@ class ChatHandler:
 
         self.project = AIProjectClient(
             credential=DefaultAzureCredential(),
-            endpoint="https://oaiexamplecouncilsgr.services.ai.azure.com/api/projects/councilHackathon")
+            endpoint=os.environ["AZURE_OPENAI_ENDPOINT"]+'projects/councilHackathon')
         
-        self.agent_greeting = self.project.agents.get_agent("asst_8TJJTaYXKZajDDm58wJKiUy4")
-        self.bot_classification = self.project.agents.get_agent("asst_aaXXugBdlI7jZ4p4ewROfiQn")
-        self.agent_general = self.project.agents.get_agent("asst_7UCXhk6cGhUh6rRovLIkqLuD")
+        self.agent_greeting = self.project.agents.get_agent("")
+        self.bot_classification = self.project.agents.get_agent("")
+        self.agent_general = self.project.agents.get_agent("")
         self.thread = self.project.agents.threads.create()
     
     def trigger_api_post_request(self,url, payload):
@@ -125,7 +125,7 @@ class ChatHandler:
 
             return response
 
-        elif query_type == 'Moving House':
+        elif query_type == 'Example Category 1':
 
 
             message = self.project.agents.messages.create(
