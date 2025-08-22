@@ -1,9 +1,9 @@
 import os
 import struct
 from typing import BinaryIO
-import azure.cognitiveservices.speech as speechsdk
+#import azure.cognitiveservices.speech as speechsdk
 import time
-from langdetect import detect
+#from langdetect import detect
 
 
 class AudioTranscriber:

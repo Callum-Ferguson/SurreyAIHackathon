@@ -25,9 +25,9 @@ class ChatHandler:
             credential=DefaultAzureCredential(),
             endpoint=os.environ["AZURE_OPENAI_ENDPOINT"]+'projects/councilHackathon')
         
-        self.agent_greeting = self.project.agents.get_agent("")
-        self.bot_classification = self.project.agents.get_agent("")
-        self.agent_general = self.project.agents.get_agent("")
+        self.agent_greeting = self.project.agents.get_agent("asst_opz205EXCt42GrIwRGn6kkOS")
+        self.bot_classification = self.project.agents.get_agent("asst_9UianEEQg2BAgr4619urSvt7")
+        self.agent_general = self.project.agents.get_agent("asst_R02HjjS81ZGfYgz67gapUqjA")
         self.thread = self.project.agents.threads.create()
     
     def trigger_api_post_request(self,url, payload):

@@ -35,7 +35,7 @@ class SearchHandler:
     
     def create_vector_index(self):
 
-        folder_path = "./docs/"
+        folder_path = "./api/docs/"
         for doc in os.listdir(folder_path):
 
             doc_path = os.path.join(folder_path, doc)
@@ -67,4 +67,4 @@ class SearchHandler:
         return context
 
 # Uncomment this to create or add to the vector index in AI search
-# SearchHandler().create_vector_index()
+SearchHandler().create_vector_index()

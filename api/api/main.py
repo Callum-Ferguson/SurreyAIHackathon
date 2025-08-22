@@ -5,11 +5,11 @@ from fastapi import FastAPI, HTTPException, UploadFile, WebSocket, Request
 from pydantic import BaseModel
 
 from api.chat.chat_handler import ChatHandler
-from api.enrich.translation import TranslationHandler
-from api.enrich.audio_converter import AudioConverter
-from api.enrich.audio_transcriber import AudioTranscriber
-from api.telephony.legacy.simple_call_handler import incoming_call_handler
-import azure.cognitiveservices.speech as speechsdk
+#from api.enrich.translation import TranslationHandler
+#from api.enrich.audio_converter import AudioConverter
+#from api.enrich.audio_transcriber import AudioTranscriber
+#from api.telephony.legacy.simple_call_handler import incoming_call_handler
+#import azure.cognitiveservices.speech as speechsdk
 
 
 import json
@@ -29,6 +29,7 @@ class ProcessRequest(BaseModel):
 class ProcessResponse(BaseModel):
     response: str
 
+"""
 class AudioProcessResponse(BaseModel):
     transcribed_audio: str
     response: str
@@ -41,12 +42,14 @@ speech_config = speechsdk.SpeechConfig(
 
 audio_transcriber = AudioTranscriber(speech_config)
 translation_handler = TranslationHandler()
+"""
 
 @app.post("/api/process")
 async def process(request: ProcessRequest) -> ProcessResponse:
     response_content = str(chat_handler.get_chat_response(request.body))
     return ProcessResponse(response=response_content)
 
+"""
 @app.post(path="/api/process-audio-file")
 async def process_audio_file(request: ProcessRequest) -> AudioProcessResponse:
                 
@@ -88,7 +91,7 @@ async def process_audio_file(request: ProcessRequest) -> AudioProcessResponse:
 
 @app.route("/api/incomingCall",  methods=['POST'])
 async def telephony_webhook(request: Request):
-    """Handle incoming telephony events"""
+    # Handle incoming telephony events
     result = await incoming_call_handler(request)
     return result
-
+"""
