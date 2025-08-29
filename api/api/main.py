@@ -21,7 +21,6 @@ app = FastAPI()
 
 chat_handler = ChatHandler()
 
-
 class ProcessRequest(BaseModel):
     body: str
 

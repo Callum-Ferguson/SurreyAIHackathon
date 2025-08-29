@@ -24,7 +24,6 @@ The following software must be installed on a machine in order to run the soluti
 - Python 3.12 (https://www.python.org/ftp/python/3.12.4/python-3.12.4-amd64.exe)
 - NodeJS / NPM (https://nodejs.org/en/download/package-manager)
 - Azure CLI (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-windows?tabs=azure-cli)
-- Poetry (https://python-poetry.org/docs/#installing-with-the-official-installer)
 
 ### Infrastructure
 
@@ -33,6 +32,11 @@ A bicep template is provided to create the required infrastructure in an Azure r
 ```ps
 az deployment group create --resource-group rgexample --template-file main.bicep --parameters councilName='councilNameExample'
 ```
+Also you will need to create an Azure AI Foundry resource directly in the RG. All of the default configuration values can be left
+Once created, you will need to enter the Azure AI Foundry resource and navigate to the Models + Endpoints tab. From here, deploy two new base models, leaving the names as the default:
+- gpt-4o-mini
+- text-embedding-ada-002
+
 
 ### Running the Solution
 
@@ -48,7 +52,7 @@ az deployment group create --resource-group rgexample --template-file main.bicep
 
 #### API
 
-1. Navigate to the window opened for the _backend_ folder
+1. Navigate to the window opened for the _api_ folder
 2. Create a .env file in the {repo root}/api folder with the following content:
 
 ```
@@ -65,10 +69,6 @@ AZURE_AI_SEARCH_INDEX_NAME="{YOUR INDEX NAME}"
 AZURE_AI_SEARCH_API_KEY="{YOUR AI SEARCH KEY}"
 ```
 
-3. Execute `poetry install` in the VS Code terminal
-4. Execute `poetry shell` in the VS Code terminal
-5. Push <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> in VS Code to open the command palette
-6. Select `Python: Select Interpreter`
-7. Choose the interpreter created for Poetry
-8. Hit <kbd>F5</kbd> to start the debugger
-9. Navigate to http://localhost:8000/docs to confirm the API is running
+3. Execute `pip install -r requirements.txt`
+4. Hit <kbd>F5</kbd> to start the debugger
+5. Navigate to http://localhost:8000/docs to confirm the API is running
