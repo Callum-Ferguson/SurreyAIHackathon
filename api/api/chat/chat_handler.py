@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
-from azure.ai.agents.models import ListSortOrder, FunctionTool, ToolSet
+from azure.ai.agents.models import ListSortOrder, FunctionTool, ToolSet, CodeInterpreterTool, FilePurpose, MessageRole
 from langchain_openai import AzureChatOpenAI
 
 class ChatHandler:
@@ -29,11 +29,15 @@ class ChatHandler:
         self.agent_information = self.project.agents.get_agent("asst_qKo3BWukyXvfqOM5Eiu7jxl3")
         self.agent_eligibility = self.project.agents.get_agent("asst_nQej1R20aXi3n46pnuwuwdEy")
 
+        self.agent_eligibility_2 = self.project.agents.get_agent("asst_rgX5enEtCEHZYGUqSdE5YFOe")
+
         # Create conversation thread
         self.thread = self.project.agents.threads.create()
 
         # Setup tools/functions for automatic function calling
-        self.setup_agents_with_tools()
+        #self.setup_agents_with_tools()
+
+        self.setup_agent_with_querying()
 
     def setup_agents_with_tools(self):
         """Register Python functions as tools for the eligibility agent"""
@@ -47,6 +51,24 @@ class ChatHandler:
 
         # Enable auto function calls for the eligibility agent
         self.project.agents.enable_auto_function_calls(toolset)
+
+    def setup_agent_with_querying(self):
+
+        asset_file_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../../docs/distances.csv")
+        )
+
+        file = self.project.agents.files.upload_and_poll(file_path=asset_file_path, purpose=FilePurpose.AGENTS)
+
+        print(f"Uploaded file, file ID: {file.id}")
+
+        code_interpreter = CodeInterpreterTool(file_ids=[file.id])
+
+        file = self.project.agents.update_agent(
+            agent_id = self.agent_eligibility_2.id,
+            tools=code_interpreter.definitions,
+            tool_resources=code_interpreter.resources,
+        )
 
     def get_school_distances(self, postcode: str) -> str:
         """Return eligible schools for transport based on postcode"""
@@ -121,7 +143,7 @@ class ChatHandler:
         """Handle eligibility assessment via auto function calls"""
         run = self.project.agents.runs.create_and_process(
             thread_id=self.thread.id,
-            agent_id=self.agent_eligibility.id
+            agent_id=self.agent_eligibility_2.id
         )
 
         # Wait until the run is complete
