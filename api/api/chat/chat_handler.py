@@ -1,177 +1,174 @@
 import os
-import requests
-
-from langchain_openai import AzureChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from api.search.search_handler import SearchHandler
 import json
-from types import SimpleNamespace
+import time
+from typing import Dict
 
+from fastapi import FastAPI
+from pydantic import BaseModel
 
-from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
-from azure.ai.agents.models import ListSortOrder
-
-search_handler = SearchHandler()
-
+from azure.ai.projects import AIProjectClient
+from azure.ai.agents.models import ListSortOrder, FunctionTool, ToolSet, CodeInterpreterTool, FilePurpose, MessageRole
+from langchain_openai import AzureChatOpenAI
 
 class ChatHandler:
     def __init__(self) -> None:
+        # Initialize LLM
         self.llm = AzureChatOpenAI(
             azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"]
         )
 
+        # Initialize Azure AI Project client
         self.project = AIProjectClient(
             credential=DefaultAzureCredential(),
-            endpoint=os.environ["AZURE_OPENAI_ENDPOINT"]+'projects/councilHackathon')
-        
-        self.agent_greeting = self.project.agents.get_agent("")
-        self.bot_classification = self.project.agents.get_agent("")
-        self.agent_general = self.project.agents.get_agent("")
+            endpoint=os.environ["AZURE_OPENAI_ENDPOINT"] + "api/projects/councildemo"
+        )
+
+        # Initialize agents
+        self.agent_classifier = self.project.agents.get_agent("asst_nCjO26kHQms2Zdpe7UGybmsB")
+        self.agent_information = self.project.agents.get_agent("asst_qKo3BWukyXvfqOM5Eiu7jxl3")
+        self.agent_eligibility = self.project.agents.get_agent("asst_nQej1R20aXi3n46pnuwuwdEy")
+
+        self.agent_eligibility_2 = self.project.agents.get_agent("asst_rgX5enEtCEHZYGUqSdE5YFOe")
+
+        # Create conversation thread
         self.thread = self.project.agents.threads.create()
-    
-    def trigger_api_post_request(self,url, payload):
-        headers = {
-            "api-key": os.environ["AZURE_RBG_ADDRESS_KEY"],
-            "Ocp-Apim-Subscription-Key": os.environ["AZURE_RBG_APIM_WS_KEY"],
-            "Content-Type": "application/json"
-        }
-        response = requests.post(url, json=payload, headers=headers)
-        response.raise_for_status()  # Raises an error for bad responses (4xx/5xx)
-        return response.json()
-    
-    def trigger_api_get_request(self,url):
-        headers = {
-            "Ocp-Apim-Subscription-Key": os.environ["AZURE_RBG_APIM_WS_KEY"],
-            "Content-Type": "application/json"
-        }
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Raises an error for bad responses (4xx/5xx)
-        return response.json()
-    
-    def parse_conversation(self, conversation_str):
-        messages = []
-        lines = conversation_str.split('\n')
-        i = 0
-        
-        while i < len(lines):
-            line = lines[i]
-            if line.startswith('User: '):
-                # Extract user message (may span multiple lines)
-                user_content = line[6:]  # Remove "User: " prefix
-                i += 1
-                while i < len(lines) and not (lines[i].startswith('User: ') or lines[i].startswith('Assistant: ')):
-                    user_content += '\n' + lines[i]
-                    i += 1
-                messages.append(("human", user_content.strip()))
-            elif line.startswith('Assistant: '):
-                # Extract assistant message (may span multiple lines)
-                ai_content = line[11:]  # Remove "Assistant: " prefix
-                i += 1
-                while i < len(lines) and not (lines[i].startswith('User: ') or lines[i].startswith('Assistant: ')):
-                    ai_content += '\n' + lines[i]
-                    i += 1
-                messages.append(("ai", ai_content.strip()))
-            else:
-                i += 1
-        
-        return messages
 
-    def get_chat_response(self, input_text):
+        # Setup tools/functions for automatic function calling
+        #self.setup_agents_with_tools()
 
-        # Bot for checking conversation and checking what query is about
+        self.setup_agent_with_querying()
+
+    def setup_agents_with_tools(self):
+        """Register Python functions as tools for the eligibility agent"""
+
+        # Wrap the Python function in FunctionTool
+        school_distance_tool = FunctionTool(functions=[self.get_school_distances])
+
+        # Use ToolSet to allow multiple tools
+        toolset = ToolSet()
+        toolset.add(school_distance_tool)
+
+        # Enable auto function calls for the eligibility agent
+        self.project.agents.enable_auto_function_calls(toolset)
+
+    def setup_agent_with_querying(self):
+
+        asset_file_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../../docs/distances.csv")
+        )
+
+        file = self.project.agents.files.upload_and_poll(file_path=asset_file_path, purpose=FilePurpose.AGENTS)
+
+        print(f"Uploaded file, file ID: {file.id}")
+
+        code_interpreter = CodeInterpreterTool(file_ids=[file.id])
+
+        file = self.project.agents.update_agent(
+            agent_id = self.agent_eligibility_2.id,
+            tools=code_interpreter.definitions,
+            tool_resources=code_interpreter.resources,
+        )
+
+    def get_school_distances(self, postcode: str) -> str:
+        """Return eligible schools for transport based on postcode"""
+
+        print(f"[DEBUG] get_school_distances called with postcode: {postcode}")
+
+        # Simulated responses
+        if postcode.startswith("E"):
+            result = {
+                "postcode": postcode,
+                "valid_schools_for_transport": ["East London High School", "St Peter's School"],
+                "total_schools_found": 2,
+                "important_note": "These are the ONLY schools within transport range."
+            }
+        elif postcode.startswith("SW"):
+            result = {
+                "postcode": postcode,
+                "valid_schools_for_transport": ["West London High School", "St Paul's School"],
+                "total_schools_found": 2,
+                "important_note": "These are the ONLY schools within transport range."
+            }
+        else:
+            result = {
+                "postcode": postcode,
+                "valid_schools_for_transport": [],
+                "total_schools_found": 0,
+                "important_note": "No schools are within transport range for this postcode."
+            }
+
+        return json.dumps(result)
+
+    def classify_query(self, input_text: str) -> str:
+        """Classify the query type"""
         message = self.project.agents.messages.create(
-            thread_id=self.thread.id,
-            role="user",
-            content=input_text
+            thread_id=self.thread.id, role="user", content=input_text
         )
 
         run = self.project.agents.runs.create_and_process(
+            thread_id=self.thread.id, agent_id=self.agent_classifier.id
+        )
+
+        # Fetch last agent message
+        messages = self.project.agents.messages.list(
+            thread_id=self.thread.id, order=ListSortOrder.ASCENDING
+        )
+        last_message = next(
+            (msg.text_messages[-1].text.value for msg in list(messages)[::-1] if msg.text_messages),
+            "Unknown"
+        )
+
+        print(f"[DEBUG] Classifier full output: {last_message}")
+        return last_message.strip()
+
+    def handle_information_request(self, input_text: str) -> str:
+        """Handle general information queries"""
+        run = self.project.agents.runs.create_and_process(
+            thread_id=self.thread.id, agent_id=self.agent_information.id
+        )
+
+        messages = self.project.agents.messages.list(
+            thread_id=self.thread.id, order=ListSortOrder.ASCENDING
+        )
+        response = next(
+            (msg.text_messages[-1].text.value for msg in list(messages)[::-1] if msg.text_messages),
+            "Sorry, I couldn’t provide information at this time."
+        )
+
+        print(f"[DEBUG] Information Agent response: {response}")
+        return response
+
+    def conduct_eligibility_assessment(self, input_text: str) -> str:
+        """Handle eligibility assessment via auto function calls"""
+        run = self.project.agents.runs.create_and_process(
             thread_id=self.thread.id,
-            agent_id=self.bot_classification.id)
-        
-        messages = self.project.agents.messages.list(thread_id=self.thread.id, order=ListSortOrder.ASCENDING)
+            agent_id=self.agent_eligibility_2.id
+        )
 
-        query_type = next(
-                (msg.text_messages[-1].text.value for msg in list(messages)[::-1] if msg.text_messages),
-                None
-            )
+        # Wait until the run is complete
+        while run.status in ("in_progress", "queued"):
+            time.sleep(1)
+            run = self.project.agents.runs.get(thread_id=self.thread.id, run_id=run.id)
 
+        messages = self.project.agents.messages.list(
+            thread_id=self.thread.id, order=ListSortOrder.ASCENDING
+        )
+        response = next(
+            (msg.text_messages[-1].text.value for msg in list(messages)[::-1] if msg.text_messages),
+            "Sorry, I couldn’t generate an eligibility response."
+        )
+        return response
 
-        if query_type == 'Undetermined':
-        # Agent for greeting customer and checking what query is about         
+    def get_chat_response(self, input_text: str) -> str:
+        """Main entry point to route queries"""
+        query_type = self.classify_query(input_text)
+        print(f"[DEBUG] Classified query type: {query_type}")
 
-            message = self.project.agents.messages.create(
-                thread_id=self.thread.id,
-                role="user",
-                content=input_text
-            )
-
-            run = self.project.agents.runs.create_and_process(
-                thread_id=self.thread.id,
-                agent_id=self.agent_greeting.id)
-            
-            messages = self.project.agents.messages.list(thread_id=self.thread.id, order=ListSortOrder.ASCENDING)
-
-
-            # messages = self.parse_conversation(input_text)
-            # search_response = search_handler.get_query_response(str(input_text))
-
-
-            response = next(
-                (msg.text_messages[-1].text.value for msg in list(messages)[::-1] if msg.text_messages),
-                None
-            )
-
-            return response
-
-        elif query_type == 'Example Category 1':
-
-
-            message = self.project.agents.messages.create(
-                thread_id=self.thread.id,
-                role="user",
-                content=input_text
-            )
-
-            run = self.project.agents.runs.create_and_process(
-                thread_id=self.thread.id,
-                agent_id=self.agent_general.id)
-            
-            messages = self.project.agents.messages.list(thread_id=self.thread.id, order=ListSortOrder.ASCENDING)
-
-
-            # messages = self.parse_conversation(input_text)
-            # search_response = search_handler.get_query_response(str(input_text))
-
-            response = next(
-                (msg.text_messages[-1].text.value for msg in list(messages)[::-1] if msg.text_messages),
-                None
-            )
-
-
-            return response
-        
-        # return response
-        
-    def get_chat_completions(self, system_prompt,user_prompt): 
-        
-        prompt = ChatPromptTemplate.from_messages(
-                        [
-                            (
-                                "system",
-                                        system_prompt,
-                            ),
-                            ("user", user_prompt)
-                        ] 
-                    )
-
-        chain = prompt | self.llm
-        response = chain.invoke(
-                        {
-                            "user_prompt": user_prompt,
-                            "system_prompt": system_prompt
-                        }
-                    )
-
-        return response.content
+        if query_type in ["Information_Request", "General_Greeting"]:
+            return self.handle_information_request(input_text)
+        elif query_type == "Eligibility_Check":
+            return self.conduct_eligibility_assessment(input_text)
+        else:
+            # Default fallback
+            return self.handle_information_request(input_text)

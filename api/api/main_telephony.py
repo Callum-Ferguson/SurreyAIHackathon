@@ -45,7 +45,7 @@ AZURE_OPENAI_DEPLOYMENT_MODEL_NAME = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAM
 AZURE_OPENAI_DEPLOYMENT_MODEL = "gpt-4o-mini"
 
 # Agent Phone Number - You might want to move this to .env file
-AGENT_PHONE_NUMBER = "+447802432579"
+AGENT_PHONE_NUMBER = ""
 
 # Callback events URI to handle callback events.
 CALLBACK_URI_HOST = os.environ.get("CALLBACK_URL")
