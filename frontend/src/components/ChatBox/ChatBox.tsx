@@ -1,12 +1,12 @@
 import { Button, FileInput, Group, Stack, Textarea } from '@mantine/core';
-import {
+/* import {
   IconClearAll,
   IconMicrophone,
   IconMicrophoneOff,
   IconSend,
   IconUpload,
-} from '@tabler/icons-react';
-import { useRef, useState } from 'react';
+} from '@tabler/icons-react'; */
+import { KeyboardEvent, useRef, useState } from 'react';
 import { useReactMediaRecorder } from 'react-media-recorder-2';
 
 interface ChatBoxProps {
@@ -64,6 +64,13 @@ export default function ChatBox({
     audioFileUploaded(emptyFile);
   };
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if(e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onNewTextMessage();
+    }
+  }
+
   return (
     <>
       <Stack>
@@ -73,24 +80,25 @@ export default function ChatBox({
           minRows={7}
           value={message}
           onChange={(e) => setMessage(e.currentTarget.value)}
+          onKeyDown={(e) => handleKeyDown(e)}
         />
         <Group w="100%">
           <Group>
-            <Button onClick={onNewTextMessage} leftSection={<IconSend />}>
+            <Button onClick={onNewTextMessage} /* leftSection={<IconSend />} */>
               Send
             </Button>
-            <Button onClick={onAudioFileClick} leftSection={<IconUpload />}>
+            <Button onClick={onAudioFileClick} /* leftSection={<IconUpload />} */>
               Upload Audio
             </Button>
             <Button
-              leftSection={<IconMicrophone />}
+              /* leftSection={<IconMicrophone />} */
               onClick={onRecordingClick}
             >
               Start Recording
             </Button>
           </Group>
           <Group ml="auto">
-            <Button variant="outline" onClick={chatHistoryCleared} leftSection={<IconClearAll />}>
+            <Button variant="outline" onClick={chatHistoryCleared} /* leftSection={<IconClearAll />} */>
               Clear Chat
             </Button>
           </Group>
