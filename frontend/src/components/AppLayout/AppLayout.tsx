@@ -10,13 +10,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [opened, { toggle }] = useDisclosure();
 
   return (
-    <AppShell header={{ height: 60 }} padding="md">
-      <AppShell.Header bg="blue">
+    <AppShell header={{ height: 70 }} padding="md">
+      <AppShell.Header bg="sccGreen.9">
         <Group h="100%" px="md">
-          <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+          {/* <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" /> */}
           <Logo />
           <Text c="white" fw={600}>
-            Microsoft and Telefónica Tech - Local Government Hackathon
+            Home To School Transport Eligibility Checker
           </Text>
         </Group>
       </AppShell.Header>

@@ -1,11 +1,11 @@
 import { Image } from '@mantine/core';
-import logoSvg from '@/images/logo.svg';
+import logoSvg from '@/images/surrey-county-council.svg';
 
 export default function Logo() {
   return (
     <Image
       src={logoSvg}
-      alt="Microsoft and Telefónica Tech - Local Government Hackathon"
+      alt="Home To School Transport Eligibility Checker"
       width={50}
       height={50}
     />
