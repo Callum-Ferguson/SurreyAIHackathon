@@ -87,19 +87,19 @@ export default function ChatBox({
             <Button color="sccGreen.9" onClick={onNewTextMessage} /* leftSection={<IconSend />} */>
               Send
             </Button>
-            <Button color="sccGreen.9" onClick={onAudioFileClick} /* leftSection={<IconUpload />} */>
+{/*             <Button color="sccGreen.9" onClick={onAudioFileClick} >
               Upload Audio
             </Button>
             <Button
-              /* leftSection={<IconMicrophone />} */
+              leftSection={<IconMicrophone />}
               onClick={onRecordingClick}
               color="sccGreen.9" 
             >
               Start Recording
-            </Button>
+            </Button> */}
           </Group>
           <Group ml="auto">
-            <Button color="sccGreen.9" variant="outline" onClick={chatHistoryCleared} /* leftSection={<IconClearAll />} */>
+            <Button color="sccGreen.9"  variant="outline" onClick={chatHistoryCleared} /* leftSection={<IconClearAll />} */>
               Clear Chat
             </Button>
           </Group>
